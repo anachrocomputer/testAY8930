@@ -1,5 +1,5 @@
 # testAY8930
-The Microchip YM8930 is a 40-pin chip which has the same function and register-level interface as the General Instruments
+The Microchip AY8930 is a 40-pin chip which has the same function and register-level interface as the General Instruments
 [AY-3-8910](https://en.wikipedia.org/wiki/General_Instrument_AY-3-8910 "Wikipedia: General Instrument AY-3-8910").
 The AY8930, though, has a number of enhancements over the AY-3-8910.
 It has three envelope shapers, 16-bit tone generator control registers, an improved
