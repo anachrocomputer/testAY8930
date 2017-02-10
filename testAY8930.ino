@@ -1,4 +1,4 @@
-/* testYMZ284 --- simple sketch to drive the YMZ284 sound chip      2017-01-28 */
+/* testAY8930 --- simple sketch to drive the AY8930 sound chip      2017-02-09 */
 /* Copyright (c) 2017 John Honniball                                           */
 
 #define CLK_PIN   (3)
@@ -6,47 +6,6 @@
 #define BC1_PIN   (5)
 #define D0_PIN    (6)
 
-#define D2  38
-
-#define E2  40
-
-#define C3  48
-
-#define F3  53
-#define F3s 54
-#define G3  55
-#define G3s 56
-#define A3  57
-#define A3s 58
-#define B3  59
-#define C4  60
-#define C4s 61
-#define D4  62
-#define D4s 63
-#define E4  64
-
-#define G4  67
-#define B4  71
-
-int tp[] = {//Frequencies related to MIDI note numbers
-  15289, 14431, 13621, 12856, 12135, 11454, 10811, 10204,//0-o7
-  9631, 9091, 8581, 8099, 7645, 7215, 6810, 6428,//8-15
-  6067, 5727, 5405, 5102, 4816, 4545, 4290, 4050,//16-23
-  3822, 3608, 3405, 3214, 3034, 2863, 2703, 2551,//24-31
-  2408, 2273, 2145, 2025, 1911, 1804, 1703, 1607,//32-39
-  1517, 1432, 1351, 1276, 1204, 1136, 1073, 1012,//40-47
-  956, 902, 851, 804, 758, 716, 676, 638,//48-55
-  602, 568, 536, 506, 478, 451, 426, 402,//56-63
-  379, 358, 338, 319, 301, 284, 268, 253,//64-71
-  239, 225, 213, 201, 190, 179, 169, 159,//72-79
-  150, 142, 134, 127, 119, 113, 106, 100,//80-87
-  95, 89, 84, 80, 75, 71, 67, 63,//88-95
-  60, 56, 53, 50, 47, 45, 42, 40,//96-103
-  38, 36, 34, 32, 30, 28, 27, 25,//104-111
-  24, 22, 21, 20, 19, 18, 17, 16,//112-119
-  15, 14, 13, 13, 12, 11, 11, 10,//120-127
-  0//off
-};
 
 void setup(void)
 {
@@ -114,12 +73,6 @@ void loop(void)
   aywrite(1, ana >> 8);
 
   delay(20);
-}
-
-void setnote(const int chan, const int midi)
-{
-  aywrite((chan * 2),     tp[midi] & 0xff);
-  aywrite((chan * 2) + 1, tp[midi] >> 8);
 }
 
 void setenvelope(const int env)
