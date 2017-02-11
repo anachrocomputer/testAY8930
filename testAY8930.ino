@@ -30,6 +30,8 @@ void setup(void)
   pinMode(BC1_PIN, OUTPUT);
   digitalWrite(BC1_PIN, LOW);
 
+  // BC2 pin on AY8930 is no-connect
+
   // D0-D7 pins
   for (i = D0_PIN; i < (D0_PIN + 8); i++) {
     pinMode(i, OUTPUT);
@@ -43,16 +45,13 @@ void setup(void)
   //    aywrite(i, 0);
   //}
 
-  aywrite(15, 0);
   aywrite(0, 142);  // (2000000 / 32) / frequency
   aywrite(1, 0);
-  //aywrite(2, 255);
-  //aywrite(0, 64);
   aywrite(6, 15);   // Noise
   aywrite(7, 0x3e); // Channel enables
-  aywrite(8, 16);   // Channel amplitudes
-  aywrite(9, 0);  
-  aywrite(10, 0);
+  setAmplitude(0, 16);   // Channel amplitudes
+  setAmplitude(1, 0);  
+  setAmplitude(2, 0);
   aywrite(11, 0);   // Envelope period
   aywrite(12, 4);
   aywrite(13, 10);
@@ -64,30 +63,45 @@ void loop(void)
 
   ana = analogRead(0);
 
-  aywrite(11, ana & 0xff);
-  aywrite(12, ana >> 8);
+  setEnvelopePeriod(ana);
 
   ana = analogRead(1);
   
-  aywrite(0, ana & 0xff);
-  aywrite(1, ana >> 8);
+  setTonePeriod(0, ana);
 
   delay(20);
 }
 
-void setenvelope(const int env)
+void setAmplitude(const int channel, const int amplitude)
 {
-  aywrite(11, env & 0xff);
-  aywrite(12, env >> 8);
+  aywrite(8 + channel, amplitude);
 }
+
+void setTonePeriod(const int channel, const unsigned int period)
+{
+  aywrite((channel * 2), period & 0xff);
+  aywrite((channel * 2) + 1, period >> 8);
+}
+
+void setEnvelopePeriod(const unsigned int envelope)
+{
+  aywrite(11, envelope & 0xff);
+  aywrite(12, envelope >> 8);
+}
+
+
+/* aywrite --- write a byte to a given register in the PSG */
 
 void aywrite(int reg, int val)
 {
-  ymzwrite(LOW, reg);
-  ymzwrite(HIGH, val);
+  ay8930write(LOW, reg);  // Latch register number
+  ay8930write(HIGH, val); // Latch register contents
 }
 
-void ymzwrite(int a0, int val)
+
+/* ay8930write --- emulate a bus cycle to write a single byte to the chip */
+
+void ay8930write(int a0, int val)
 {
   int i;
 
