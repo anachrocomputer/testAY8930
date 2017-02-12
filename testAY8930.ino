@@ -9,6 +9,11 @@
 #define BANKA (0xA0)
 #define BANKB (0xB0)
 
+#define DUTYCYCLE50 (4)
+
+uint8_t CurrentBank = 0;
+uint8_t CurrentEnvMode = 0;
+
 void setup(void)
 {
   int i;
@@ -47,8 +52,8 @@ void setup(void)
   //    aywrite(i, 0);
   //}
 
-  aywrite(13, BANKA); // Switch to enhanced mode
-
+  // First access to any register apart from R13 will switch chip
+  // into enhanced mode.
   aywrite(0, 142);  // (2000000 / 32) / frequency
   aywrite(1, 0);
   aywrite(6, 2);   // Noise
@@ -56,18 +61,15 @@ void setup(void)
   setAmplitude(0, 32);   // Channel amplitudes
   setAmplitude(1, 32);  
   setAmplitude(2, 0);
-  aywrite(11, 0);   // Envelope period
-  aywrite(12, 4);
-  aywrite(13, 10 | BANKB);
-  aywrite(0, 0);  // Channel B envelope to 2048
-  aywrite(1, 8);
-  aywrite(4, 10); // Channel B envelope to triangle
-  aywrite(6, 4);  // All three tone channels to 50% duty cycle
-  aywrite(7, 4);
-  aywrite(8, 4);
-  aywrite(9, 0x55);   // Set up noise generator
-  aywrite(10, 0xaa);
-  aywrite(13, 10 | BANKA);
+  setEnvelopePeriod(0, 1024);
+  aywrite(13, 10); // Channel A envelope to triangle
+  setEnvelopePeriod(1, 2048);
+  aywrite(20, 10); // Channel B envelope to triangle
+  setDutyCycle(0, DUTYCYCLE50);  // All three tone channels to 50% duty cycle
+  setDutyCycle(1, DUTYCYCLE50);
+  setDutyCycle(2, DUTYCYCLE50);
+  aywrite(25, 0x55);   // Set up noise generator
+  aywrite(26, 0xaa);
 }
 
 void loop(void)
@@ -76,7 +78,7 @@ void loop(void)
 
   ana = analogRead(0);
 
-  setEnvelopePeriod(ana);
+  setEnvelopePeriod(0, ana);
 
   ana = analogRead(1);
   
@@ -96,10 +98,27 @@ void setTonePeriod(const int channel, const unsigned int period)
   aywrite((channel * 2) + 1, period >> 8);
 }
 
-void setEnvelopePeriod(const unsigned int envelope)
+void setDutyCycle(const int channel, const int dutyCycle)
 {
-  aywrite(11, envelope & 0xff);
-  aywrite(12, envelope >> 8);
+  aywrite(22 + channel, dutyCycle);
+}
+
+void setEnvelopePeriod(const int channel, const unsigned int envelope)
+{
+  switch (channel) {
+  case 0:
+    aywrite(11, envelope & 0xff);
+    aywrite(12, envelope >> 8);
+    break;
+  case 1:
+    aywrite(16, envelope & 0xff);
+    aywrite(17, envelope >> 8);
+    break;
+  case 2:
+    aywrite(18, envelope & 0xff);
+    aywrite(19, envelope >> 8);
+    break;
+  }
 }
 
 
@@ -107,8 +126,34 @@ void setEnvelopePeriod(const unsigned int envelope)
 
 void aywrite(int reg, int val)
 {
-  ay8930write(LOW, reg);  // Latch register number
-  ay8930write(HIGH, val); // Latch register contents
+  // Logic in this function handles the mode and bank selection
+  // bits in Register 13, so that the chip appears to have 32 registers
+  // numbered 0-31. Access to register 13 is a special case.
+  // Access to other registers will cause a bank swap via R13 only
+  // if required.
+  if (reg == 13) {
+    CurrentEnvMode = val;
+    ay8930write(LOW, 13);  // Latch register number
+    ay8930write(HIGH, CurrentEnvMode | CurrentBank);
+  }
+  else if (reg < 16) {  // Bank A register 0-15
+    if (CurrentBank != BANKA) {
+      CurrentBank = BANKA;
+      ay8930write(LOW, 13);  // Select register 13
+      ay8930write(HIGH, CurrentEnvMode | CurrentBank);
+    }
+    ay8930write(LOW, reg);  // Latch register number
+    ay8930write(HIGH, val); // Latch register contents
+  }
+  else {
+    if (CurrentBank != BANKB) {
+      CurrentBank = BANKB;
+      ay8930write(LOW, 13);  // Select register 13
+      ay8930write(HIGH, CurrentEnvMode | CurrentBank);
+    }
+    ay8930write(LOW, reg - 16);  // Latch register number
+    ay8930write(HIGH, val); // Latch register contents
+  }
 }
 
 
