@@ -6,6 +6,8 @@
 #define BC1_PIN   (5)
 #define D0_PIN    (6)
 
+#define BANKA (0xA0)
+#define BANKB (0xB0)
 
 void setup(void)
 {
@@ -45,16 +47,27 @@ void setup(void)
   //    aywrite(i, 0);
   //}
 
+  aywrite(13, BANKA); // Switch to enhanced mode
+
   aywrite(0, 142);  // (2000000 / 32) / frequency
   aywrite(1, 0);
-  aywrite(6, 15);   // Noise
-  aywrite(7, 0x3e); // Channel enables
-  setAmplitude(0, 16);   // Channel amplitudes
-  setAmplitude(1, 0);  
+  aywrite(6, 2);   // Noise
+  aywrite(7, 0x2e); // Channel enables
+  setAmplitude(0, 32);   // Channel amplitudes
+  setAmplitude(1, 32);  
   setAmplitude(2, 0);
   aywrite(11, 0);   // Envelope period
   aywrite(12, 4);
-  aywrite(13, 10);
+  aywrite(13, 10 | BANKB);
+  aywrite(0, 0);  // Channel B envelope to 2048
+  aywrite(1, 8);
+  aywrite(4, 10); // Channel B envelope to triangle
+  aywrite(6, 4);  // All three tone channels to 50% duty cycle
+  aywrite(7, 4);
+  aywrite(8, 4);
+  aywrite(9, 0x55);   // Set up noise generator
+  aywrite(10, 0xaa);
+  aywrite(13, 10 | BANKA);
 }
 
 void loop(void)
@@ -67,7 +80,7 @@ void loop(void)
 
   ana = analogRead(1);
   
-  setTonePeriod(0, ana);
+  setTonePeriod(0, (ana * 4) + 2048);
 
   delay(20);
 }
