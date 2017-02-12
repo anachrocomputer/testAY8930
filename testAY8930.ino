@@ -21,6 +21,8 @@
 
 uint8_t CurrentBank = 0;
 uint8_t CurrentEnvMode = 0;
+uint8_t EnableReg = 0;
+uint8_t Counter = 0;
 
 void setup(void)
 {
@@ -62,8 +64,7 @@ void setup(void)
 
   // First access to any register apart from R13 will switch chip
   // into enhanced mode.
-  aywrite(0, 142);  // (2000000 / 32) / frequency
-  aywrite(1, 0);
+  initPSG();
   
   setNoiseMasks(0x55, 0xaa);   // Set up noise generator
   setNoisePeriod(2);
@@ -72,7 +73,9 @@ void setup(void)
   setDutyCycle(1, DUTYCYCLE50);
   setDutyCycle(2, DUTYCYCLE50);
   
-  aywrite(7, 0x2e); // Channel enables
+  setToneEnable(0, true);
+  setNoiseEnable(1, true);
+  setPortDirection(1, OUTPUT);
   
   setAmplitude(0, 32);   // Channel amplitudes
   setAmplitude(1, 32);  
@@ -96,7 +99,63 @@ void loop(void)
   
   setTonePeriod(0, (ana * 4) + 2048);
 
+  setPortOutputs(1, Counter++);
+  
   delay(20);
+}
+
+void initPSG(void)
+{
+  EnableReg = 0x3f; // All noise and tone channels disabled
+
+  aywrite(7, EnableReg);
+}
+
+void setToneEnable(const int channel, const int enable)
+{
+  const uint8_t mask = 1 << channel;
+
+  if (enable) {
+    EnableReg &= ~mask;
+  }
+  else {
+    EnableReg |= mask;
+  }
+
+  aywrite(7, EnableReg);
+}
+
+void setNoiseEnable(const int channel, const int enable)
+{
+  const uint8_t mask = 1 << (3 + channel);
+
+  if (enable) {
+    EnableReg &= ~mask;
+  }
+  else {
+    EnableReg |= mask;
+  }
+
+  aywrite(7, EnableReg);
+}
+
+void setPortDirection(const int channel, const int direction)
+{
+  const uint8_t mask = 1 << (6 + channel);
+
+  if (direction == INPUT) {
+    EnableReg &= ~mask;
+  }
+  else if (direction == OUTPUT) {
+    EnableReg |= mask;
+  }
+
+  aywrite(7, EnableReg);
+}
+
+void setPortOutputs(const int channel, const int val)
+{
+  aywrite(14 + channel, val);
 }
 
 void setAmplitude(const int channel, const int amplitude)
