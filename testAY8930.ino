@@ -9,7 +9,15 @@
 #define BANKA (0xA0)
 #define BANKB (0xB0)
 
+#define DUTYCYCLE03 (0)
+#define DUTYCYCLE06 (1)
+#define DUTYCYCLE12 (2)
+#define DUTYCYCLE25 (3)
 #define DUTYCYCLE50 (4)
+#define DUTYCYCLE75 (5)
+#define DUTYCYCLE87 (6)
+#define DUTYCYCLE94 (7)
+#define DUTYCYCLE97 (8)
 
 uint8_t CurrentBank = 0;
 uint8_t CurrentEnvMode = 0;
@@ -56,20 +64,24 @@ void setup(void)
   // into enhanced mode.
   aywrite(0, 142);  // (2000000 / 32) / frequency
   aywrite(1, 0);
-  aywrite(6, 2);   // Noise
-  aywrite(7, 0x2e); // Channel enables
-  setAmplitude(0, 32);   // Channel amplitudes
-  setAmplitude(1, 32);  
-  setAmplitude(2, 0);
-  setEnvelopePeriod(0, 1024);
-  aywrite(13, 10); // Channel A envelope to triangle
-  setEnvelopePeriod(1, 2048);
-  aywrite(20, 10); // Channel B envelope to triangle
+  
+  setNoiseMasks(0x55, 0xaa);   // Set up noise generator
+  setNoisePeriod(2);
+  
   setDutyCycle(0, DUTYCYCLE50);  // All three tone channels to 50% duty cycle
   setDutyCycle(1, DUTYCYCLE50);
   setDutyCycle(2, DUTYCYCLE50);
-  aywrite(25, 0x55);   // Set up noise generator
-  aywrite(26, 0xaa);
+  
+  aywrite(7, 0x2e); // Channel enables
+  
+  setAmplitude(0, 32);   // Channel amplitudes
+  setAmplitude(1, 32);  
+  setAmplitude(2, 0);
+  
+  setEnvelopePeriod(0, 1024);
+  setEnvelopeMode(0, 10); // Channel A envelope to triangle
+  setEnvelopePeriod(1, 2048);
+  setEnvelopeMode(1, 10); // Channel B envelope to triangle
 }
 
 void loop(void)
@@ -103,6 +115,17 @@ void setDutyCycle(const int channel, const int dutyCycle)
   aywrite(22 + channel, dutyCycle);
 }
 
+void setNoisePeriod(const int period)
+{
+  aywrite(6, period);
+}
+
+void setNoiseMasks(const int andMask, const int orMask)
+{
+  aywrite(25, andMask);
+  aywrite(26, orMask);
+}
+
 void setEnvelopePeriod(const int channel, const unsigned int envelope)
 {
   switch (channel) {
@@ -117,6 +140,21 @@ void setEnvelopePeriod(const int channel, const unsigned int envelope)
   case 2:
     aywrite(18, envelope & 0xff);
     aywrite(19, envelope >> 8);
+    break;
+  }
+}
+
+void setEnvelopeMode(const int channel, const unsigned int mode)
+{
+  switch (channel) {
+  case 0:
+    aywrite(13, mode);
+    break;
+  case 1:
+    aywrite(20, mode);
+    break;
+  case 2:
+    aywrite(21, mode);
     break;
   }
 }
