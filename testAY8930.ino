@@ -26,44 +26,8 @@ uint8_t Counter = 0;
 
 void setup(void)
 {
-  int i;
-
   Serial.begin(9600);
 
-  // Generate 2MHz clock on Pin 3
-  pinMode(CLK_PIN, OUTPUT);
-  TCCR2A = 0x23;
-  TCCR2B = 0x09;
-  OCR2A = 7;
-  OCR2B = 1;
-
-  delay(50);
-
-  // BDIR pin
-  pinMode(BDIR_PIN, OUTPUT);
-  digitalWrite(BDIR_PIN, LOW);
-
-  // BC1 pin
-  pinMode(BC1_PIN, OUTPUT);
-  digitalWrite(BC1_PIN, LOW);
-
-  // BC2 pin on AY8930 is no-connect
-
-  // D0-D7 pins
-  for (i = D0_PIN; i < (D0_PIN + 8); i++) {
-    pinMode(i, OUTPUT);
-    digitalWrite(i, LOW);
-  }
-
-  //for (i = 0; i <= 0x0d; i++) {
-  //  if (i == 7)
-  //    aywrite(i, 0x3f);
-  //  else
-  //    aywrite(i, 0);
-  //}
-
-  // First access to any register apart from R13 will switch chip
-  // into enhanced mode.
   initPSG();
   
   setNoiseMasks(0x55, 0xaa);   // Set up noise generator
@@ -106,8 +70,37 @@ void loop(void)
 
 void initPSG(void)
 {
+  int i;
+
+  // Generate 2MHz clock on Pin 3
+  pinMode(CLK_PIN, OUTPUT);
+  TCCR2A = 0x23;
+  TCCR2B = 0x09;
+  OCR2A = 7;
+  OCR2B = 1;
+
+  delay(10);
+
+  // BDIR pin
+  pinMode(BDIR_PIN, OUTPUT);
+  digitalWrite(BDIR_PIN, LOW);
+
+  // BC1 pin
+  pinMode(BC1_PIN, OUTPUT);
+  digitalWrite(BC1_PIN, LOW);
+
+  // BC2 pin on AY8930 is no-connect
+
+  // D0-D7 pins
+  for (i = D0_PIN; i < (D0_PIN + 8); i++) {
+    pinMode(i, OUTPUT);
+    digitalWrite(i, LOW);
+  }
+  
   EnableReg = 0x3f; // All noise and tone channels disabled
 
+  // First access to any register apart from R13 will switch chip
+  // into enhanced mode.
   aywrite(7, EnableReg);
 }
 
