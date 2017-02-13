@@ -6,6 +6,29 @@
 #define BC1_PIN   (5)
 #define D0_PIN    (6)
 
+// Register numbers 0-15 common to AY-3-8910; 16-31 unique to AY8930
+#define TONEPERIODA_REG     (0)
+#define TONEPERIODB_REG     (2)
+#define TONEPERIODC_REG     (4)
+#define NOISEPERIOD_REG     (6)
+#define ENABLE_REG          (7)
+#define AMPLITUDEA_REG      (8)
+#define AMPLITUDEB_REG      (9)
+#define AMPLITUDEC_REG      (10)
+#define ENVELOPEPERIODA_REG (11)
+#define ENVELOPEMODEA_REG   (13)  // Also contains bank selection bits in AY8930
+#define IOPORTA_REG         (14)
+#define IOPORTB_REG         (15)
+#define ENVELOPEPERIODB_REG (16)
+#define ENVELOPEPERIODC_REG (18)
+#define ENVELOPEMODEB_REG   (20)
+#define ENVELOPEMODEC_REG   (21)
+#define DUTYCYCLEA_REG      (22)
+#define DUTYCYCLEB_REG      (23)
+#define DUTYCYCLEC_REG      (24)
+#define NOISEANDMASK_REG    (25)
+#define NOISEORMASK_REG     (26)
+
 #define BANKA (0xA0)
 #define BANKB (0xB0)
 
@@ -18,6 +41,17 @@
 #define DUTYCYCLE87 (6)
 #define DUTYCYCLE94 (7)
 #define DUTYCYCLE97 (8)
+
+#define CHANNELA  (0)
+#define CHANNELB  (1)
+#define CHANNELC  (2)
+
+#define IOPORTA   (0)
+#define IOPORTB   (1)
+
+#define AMPLITUDE_ENV (32)
+#define AMPLITUDE_MAX (31)
+#define AMPLITUDE_OFF (0)
 
 uint8_t CurrentBank = 0;
 uint8_t CurrentEnvMode = 0;
@@ -33,22 +67,22 @@ void setup(void)
   setNoiseMasks(0x55, 0xaa);   // Set up noise generator
   setNoisePeriod(2);
   
-  setDutyCycle(0, DUTYCYCLE50);  // All three tone channels to 50% duty cycle
-  setDutyCycle(1, DUTYCYCLE50);
-  setDutyCycle(2, DUTYCYCLE50);
+  setDutyCycle(CHANNELA, DUTYCYCLE50);  // All three tone channels to 50% duty cycle
+  setDutyCycle(CHANNELB, DUTYCYCLE50);
+  setDutyCycle(CHANNELC, DUTYCYCLE50);
   
-  setToneEnable(0, true);
-  setNoiseEnable(1, true);
-  setPortDirection(1, OUTPUT);
+  setToneEnable(CHANNELA, true);
+  setNoiseEnable(CHANNELB, true);
+  setPortDirection(IOPORTB, OUTPUT);
   
-  setAmplitude(0, 32);   // Channel amplitudes
-  setAmplitude(1, 32);  
-  setAmplitude(2, 0);
+  setAmplitude(CHANNELA, AMPLITUDE_ENV);   // Channel amplitudes
+  setAmplitude(CHANNELB, AMPLITUDE_ENV);
+  setAmplitude(CHANNELC, AMPLITUDE_OFF);
   
-  setEnvelopePeriod(0, 1024);
-  setEnvelopeMode(0, 10); // Channel A envelope to triangle
-  setEnvelopePeriod(1, 2048);
-  setEnvelopeMode(1, 10); // Channel B envelope to triangle
+  setEnvelopePeriod(CHANNELA, 1024);
+  setEnvelopeMode(CHANNELA, 10); // Channel A envelope to triangle
+  setEnvelopePeriod(CHANNELB, 2048);
+  setEnvelopeMode(CHANNELB, 10); // Channel B envelope to triangle
 }
 
 void loop(void)
@@ -57,16 +91,19 @@ void loop(void)
 
   ana = analogRead(0);
 
-  setEnvelopePeriod(0, ana);
+  setEnvelopePeriod(CHANNELA, ana);
 
   ana = analogRead(1);
   
-  setTonePeriod(0, (ana * 4) + 2048);
+  setTonePeriod(CHANNELA, (ana * 4) + 2048);
 
-  setPortOutputs(1, Counter++);
+  setPortOutputs(IOPORTB, Counter++);
   
   delay(20);
 }
+
+
+/* initPSG --- initialise chip and disable all noise and tone channels */
 
 void initPSG(void)
 {
@@ -101,8 +138,11 @@ void initPSG(void)
 
   // First access to any register apart from R13 will switch chip
   // into enhanced mode.
-  aywrite(7, EnableReg);
+  aywrite(ENABLE_REG, EnableReg);
 }
+
+
+/* setToneEnable --- enable or disable tone generation on a given channel */
 
 void setToneEnable(const int channel, const int enable)
 {
@@ -115,8 +155,11 @@ void setToneEnable(const int channel, const int enable)
     EnableReg |= mask;
   }
 
-  aywrite(7, EnableReg);
+  aywrite(ENABLE_REG, EnableReg);
 }
+
+
+/* setNoiseEnable --- enable or disable noise generation on a given channel */
 
 void setNoiseEnable(const int channel, const int enable)
 {
@@ -129,8 +172,11 @@ void setNoiseEnable(const int channel, const int enable)
     EnableReg |= mask;
   }
 
-  aywrite(7, EnableReg);
+  aywrite(ENABLE_REG, EnableReg);
 }
+
+
+/* setPortDirection --- set I/O port to input or output */
 
 void setPortDirection(const int channel, const int direction)
 {
@@ -143,70 +189,94 @@ void setPortDirection(const int channel, const int direction)
     EnableReg |= mask;
   }
 
-  aywrite(7, EnableReg);
+  aywrite(ENABLE_REG, EnableReg);
 }
+
+
+/* setPortOutputs --- send a byte to the output port pins */
 
 void setPortOutputs(const int channel, const int val)
 {
-  aywrite(14 + channel, val);
+  aywrite(IOPORTA_REG + channel, val);
 }
+
+
+/* setAmplitude --- set amplitude for a given channel */
 
 void setAmplitude(const int channel, const int amplitude)
 {
-  aywrite(8 + channel, amplitude);
+  aywrite(AMPLITUDEA_REG + channel, amplitude);
 }
+
+
+/* setTonePeriod --- set tone period for a given channel */
 
 void setTonePeriod(const int channel, const unsigned int period)
 {
-  aywrite((channel * 2), period & 0xff);
-  aywrite((channel * 2) + 1, period >> 8);
+  aywrite(TONEPERIODA_REG + (channel * 2), period & 0xff);
+  aywrite(TONEPERIODA_REG + (channel * 2) + 1, period >> 8);
 }
+
+
+/* setDutyCycle --- set tone duty cycle for a given channel */
 
 void setDutyCycle(const int channel, const int dutyCycle)
 {
-  aywrite(22 + channel, dutyCycle);
+  aywrite(DUTYCYCLEA_REG + channel, dutyCycle);
 }
+
+
+/* setNoisePeriod --- set period of the noise generator */
 
 void setNoisePeriod(const int period)
 {
-  aywrite(6, period);
+  aywrite(NOISEPERIOD_REG, period);
 }
+
+
+/* setNoiseMasks --- set AND and OR masks of the noise generator */
 
 void setNoiseMasks(const int andMask, const int orMask)
 {
-  aywrite(25, andMask);
-  aywrite(26, orMask);
+  aywrite(NOISEANDMASK_REG, andMask);
+  aywrite(NOISEORMASK_REG, orMask);
 }
+
+
+/* setEnvelopePeriod --- set period of envelope generator */
 
 void setEnvelopePeriod(const int channel, const unsigned int envelope)
 {
   switch (channel) {
-  case 0:
-    aywrite(11, envelope & 0xff);
-    aywrite(12, envelope >> 8);
+  case CHANNELA:
+    aywrite(ENVELOPEPERIODA_REG, envelope & 0xff);
+    aywrite(ENVELOPEPERIODA_REG + 1, envelope >> 8);
     break;
-  case 1:
-    aywrite(16, envelope & 0xff);
-    aywrite(17, envelope >> 8);
+  case CHANNELB:
+    aywrite(ENVELOPEPERIODB_REG, envelope & 0xff);
+    aywrite(ENVELOPEPERIODB_REG + 1, envelope >> 8);
     break;
-  case 2:
-    aywrite(18, envelope & 0xff);
-    aywrite(19, envelope >> 8);
+  case CHANNELC:
+    aywrite(ENVELOPEPERIODC_REG, envelope & 0xff);
+    aywrite(ENVELOPEPERIODC_REG + 1, envelope >> 8);
     break;
   }
 }
 
+
+/* setEnvelopeMode --- set mode of envelope generator */
+
 void setEnvelopeMode(const int channel, const unsigned int mode)
 {
   switch (channel) {
-  case 0:
-    aywrite(13, mode);
+  case CHANNELA:
+    aywrite(ENVELOPEMODEA_REG, mode);
     break;
-  case 1:
-    aywrite(20, mode);
+  case CHANNELB:
+    aywrite(ENVELOPEMODEB_REG, mode);
     break;
-  case 2:
-    aywrite(21, mode);
+  case CHANNELC:
+    aywrite(ENVELOPEMODEC_REG, mode);
     break;
   }
 }
@@ -214,22 +284,22 @@ void setEnvelopeMode(const int channel, const unsigned int mode)
 
 /* aywrite --- write a byte to a given register in the PSG */
 
-void aywrite(int reg, int val)
+void aywrite(const int reg, const int val)
 {
   // Logic in this function handles the mode and bank selection
   // bits in Register 13, so that the chip appears to have 32 registers
   // numbered 0-31. Access to register 13 is a special case.
   // Access to other registers will cause a bank swap via R13 only
   // if required.
-  if (reg == 13) {
+  if (reg == ENVELOPEMODEA_REG) {
     CurrentEnvMode = val;
-    ay8930write(LOW, 13);  // Latch register number
+    ay8930write(LOW, ENVELOPEMODEA_REG);  // Latch register number
     ay8930write(HIGH, CurrentEnvMode | CurrentBank);
   }
   else if (reg < 16) {  // Bank A register 0-15
     if (CurrentBank != BANKA) {
       CurrentBank = BANKA;
-      ay8930write(LOW, 13);  // Select register 13
+      ay8930write(LOW, ENVELOPEMODEA_REG);  // Select register 13
       ay8930write(HIGH, CurrentEnvMode | CurrentBank);
     }
     ay8930write(LOW, reg);  // Latch register number
@@ -238,7 +308,7 @@ void aywrite(int reg, int val)
   else {
     if (CurrentBank != BANKB) {
       CurrentBank = BANKB;
-      ay8930write(LOW, 13);  // Select register 13
+      ay8930write(LOW, ENVELOPEMODEA_REG);  // Select register 13
       ay8930write(HIGH, CurrentEnvMode | CurrentBank);
     }
     ay8930write(LOW, reg - 16);  // Latch register number
@@ -249,7 +319,7 @@ void aywrite(int reg, int val)
 
 /* ay8930write --- emulate a bus cycle to write a single byte to the chip */
 
-void ay8930write(int a0, int val)
+void ay8930write(const int a0, const int val)
 {
   int i;
 
