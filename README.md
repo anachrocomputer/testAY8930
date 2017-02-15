@@ -33,6 +33,9 @@ When the sketch runs, we should hear a pulsating tone and a pulsating
 noise.
 Only the tone should be controllable by the pots; the noise should
 be unaffected.
+I/O Port B of the AY8930 should count up at 50Hz.
+LEDs connected to higher-order bits (e.g. pins 9 and 10 of the chip)
+should flash at a moderate rate.
 
 ## AY8930 Chip
 ![AY8930 chip](AY8930.jpg "AY8930 chip")
