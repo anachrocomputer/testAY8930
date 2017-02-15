@@ -53,6 +53,11 @@
 #define AMPLITUDE_MAX (31)
 #define AMPLITUDE_OFF (0)
 
+#define ENV_CONT    (8)
+#define ENV_ATTACK  (4)
+#define ENV_ALT     (2)
+#define ENV_HOLD    (1)
+
 uint8_t CurrentBank = 0;
 uint8_t CurrentEnvMode = 0;
 uint8_t EnableReg = 0;
@@ -80,9 +85,9 @@ void setup(void)
   setAmplitude(CHANNELC, AMPLITUDE_OFF);
   
   setEnvelopePeriod(CHANNELA, 1024);
-  setEnvelopeMode(CHANNELA, 10); // Channel A envelope to triangle
+  setEnvelopeMode(CHANNELA, ENV_CONT | ENV_ALT); // Channel A envelope to triangle
   setEnvelopePeriod(CHANNELB, 2048);
-  setEnvelopeMode(CHANNELB, 10); // Channel B envelope to triangle
+  setEnvelopeMode(CHANNELB, ENV_CONT | ENV_ALT); // Channel B envelope to triangle
 }
 
 void loop(void)
