@@ -1,10 +1,17 @@
 /* testAY8930 --- simple sketch to drive the AY8930 sound chip      2017-02-09 */
 /* Copyright (c) 2017 John Honniball                                           */
 
-#define CLK_PIN   (3)
-#define BDIR_PIN  (4)
-#define BC1_PIN   (5)
-#define D0_PIN    (6)
+#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+# define CLK_PIN   (9)
+# define BDIR_PIN  (4)
+# define BC1_PIN   (5)
+# define D0_PIN    (6)
+#else
+# define CLK_PIN   (3)
+# define BDIR_PIN  (4)
+# define BC1_PIN   (5)
+# define D0_PIN    (6)
+#endif
 
 // Register numbers 0-15 common to AY-3-8910; 16-31 unique to AY8930
 #define TONEPERIODA_REG     (0)
@@ -68,6 +75,8 @@ void setup(void)
   Serial.begin(9600);
 
   initPSG();
+
+  return;
   
   setNoiseMasks(0x55, 0xaa);   // Set up noise generator
   setNoisePeriod(2);
@@ -114,7 +123,7 @@ void initPSG(void)
 {
   int i;
 
-  // Generate 2MHz clock on Pin 3
+  // Generate 2MHz clock on Pin 3 (pin 9 on Mega128/256)
   pinMode(CLK_PIN, OUTPUT);
   TCCR2A = 0x23;
   TCCR2B = 0x09;
