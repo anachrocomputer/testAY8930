@@ -1,11 +1,12 @@
 /* testAY8930 --- simple sketch to drive the AY8930 sound chip      2017-02-09 */
 /* Copyright (c) 2017 John Honniball                                           */
 
-#define BOBS_MEGA
 // #define SLOW
 
 
-#ifdef BOBS_MEGA
+#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+# define BOARD_MEGA
+
 # define CLK_PIN   (9)
 # define BDIR_PIN  (20)
 # define BC1_PIN   (19)
@@ -366,7 +367,7 @@ void ay8930write(const int a0, const int val)
   digitalWrite(BC1_PIN, LOW);  // BC1 LOW
 #else
 
-# ifdef BOBS_MEGA
+# ifdef BOARD_MEGA
   PORTA = val;
 # else
   // D0-D1 on Port D bits 6 and 7; D2-D7 on Port B bits 0-5
