@@ -2,15 +2,17 @@
 /* Copyright (c) 2017 John Honniball                                           */
 
 #define BOBS_MEGA
+// #define SLOW
+
 
 #ifdef BOBS_MEGA
 # define CLK_PIN   (9)
-# define BDIR_PIN  (21)
-# define BC1_PIN   (20)
+# define BDIR_PIN  (20)
+# define BC1_PIN   (19)
 # define D0_PIN    (22)
 
-# define BC1_BIT   (1 << 1)
-# define BDIR_BIT  (1 << 0)
+# define BC1_BIT   (1 << 2)
+# define BDIR_BIT  (1 << 1)
 #else
 # define CLK_PIN   (3)
 # define BDIR_PIN  (4)
@@ -83,8 +85,6 @@ void setup(void)
   Serial.begin(9600);
 
   initPSG();
-
-  return;
   
   setNoiseMasks(0x55, 0xaa);   // Set up noise generator
   setNoisePeriod(2);
@@ -131,7 +131,7 @@ void initPSG(void)
 {
   int i;
 
-  // Generate 2MHz clock on Pin 3 (pin 9 on Mega128/256)
+  // Generate 2MHz clock on Pin 3 (pin 9 on Mega1280/2560)
   pinMode(CLK_PIN, OUTPUT);
   TCCR2A = 0x23;
   TCCR2B = 0x09;
@@ -139,8 +139,6 @@ void initPSG(void)
   OCR2B = 1;
 
   delay(10);
-
-  return;
   
   // BDIR pin
   pinMode(BDIR_PIN, OUTPUT);
