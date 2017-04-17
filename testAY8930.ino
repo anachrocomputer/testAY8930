@@ -1,10 +1,28 @@
 /* testAY8930 --- simple sketch to drive the AY8930 sound chip      2017-02-09 */
 /* Copyright (c) 2017 John Honniball                                           */
 
-#define CLK_PIN   (3)
-#define BDIR_PIN  (4)
-#define BC1_PIN   (5)
-#define D0_PIN    (6)
+// #define SLOW
+
+
+#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+# define BOARD_MEGA
+
+# define CLK_PIN   (9)
+# define BDIR_PIN  (20)
+# define BC1_PIN   (19)
+# define D0_PIN    (22)
+
+# define BC1_BIT   (1 << 2)
+# define BDIR_BIT  (1 << 1)
+#else
+# define CLK_PIN   (3)
+# define BDIR_PIN  (4)
+# define BC1_PIN   (5)
+# define D0_PIN    (6)
+
+# define BC1_BIT   (1 << 5)
+# define BDIR_BIT  (1 << 4)
+#endif
 
 // Register numbers 0-15 common to AY-3-8910; 16-31 unique to AY8930
 #define TONEPERIODA_REG     (0)
@@ -114,7 +132,7 @@ void initPSG(void)
 {
   int i;
 
-  // Generate 2MHz clock on Pin 3
+  // Generate 2MHz clock on Pin 3 (pin 9 on Mega1280/2560)
   pinMode(CLK_PIN, OUTPUT);
   TCCR2A = 0x23;
   TCCR2B = 0x09;
@@ -122,7 +140,7 @@ void initPSG(void)
   OCR2B = 1;
 
   delay(10);
-
+  
   // BDIR pin
   pinMode(BDIR_PIN, OUTPUT);
   digitalWrite(BDIR_PIN, LOW);
@@ -348,25 +366,30 @@ void ay8930write(const int a0, const int val)
   digitalWrite(BDIR_PIN, LOW);
   digitalWrite(BC1_PIN, LOW);  // BC1 LOW
 #else
+
+# ifdef BOARD_MEGA
+  PORTA = val;
+# else
   // D0-D1 on Port D bits 6 and 7; D2-D7 on Port B bits 0-5
   PORTD = (PORTD & 0x3f) | ((val & 0x03) << 6);
   PORTB = val >> 2;
+# endif
 
   // BC1 on Arduino Pin 5, Port D bit 5
   if (a0)
-    PORTD &= ~(1 << 5);
+    PORTD &= ~BC1_BIT;
   else
-    PORTD |= (1 << 5);
+    PORTD |= BC1_BIT;
 
   // BDIR on Arduino Pin 4, Port D bit 4
-  PORTD |= (1 << 4);
+  PORTD |= BDIR_BIT;
 
   __asm("nop");
   
   // BDIR on Arduino Pin 4, Port D bit 4
   // BC1 on Arduino Pin 5, Port D bit 5
   // Both go LOW
-  PORTD &= ~((1 << 4) | (1 << 5));
+  PORTD &= ~(BDIR_BIT | BC1_BIT);
 #endif
 }
 

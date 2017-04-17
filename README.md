@@ -8,6 +8,22 @@ noise generator and duty cycle control, amongst other things.
 This Arduino sketch tests an AY8930 chip by setting up some initial configuration and generating sounds.
 The Arduino's ADC (analog-to-digital converter) is used, along with a pot, to control the sound generator.
 
+## Arduino Wiring
+
+| PSG Signal | UNO Pin | Mega2560 Pin |
+|------------|---------|--------------|
+| D0         | 6       | 22           |
+| D1         | 7       | 23           |
+| D2         | 8       | 24           |
+| D3         | 9       | 25           |
+| D4         | 10      | 26           |
+| D5         | 11      | 27           |
+| D6         | 12      | 28           |
+| D7         | 13      | 29           |
+| CLK        | 3       | 9            |
+| BDIR       | 4       | 21           |
+| BC1        | 5       | 20           |
+
 ## Test Plan
 We want to verify both that the chip works and that it has the
 enhanced functionality (i.e. that it really is an AY8930).
